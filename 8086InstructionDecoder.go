@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 )
@@ -20,13 +21,13 @@ var registers = map[byte][]string{
 	0b111: {"bh", "di"},
 }
 
-func main() {
+var (
+	intputFileFlag = flag.String("input", "", "binary file to read")
+)
 
-	if len(os.Args) != 2 {
-		fmt.Println("need a single file to process")
-		return
-	}
-	decodeFile(os.Args[1])
+func main() {
+	flag.Parse()
+	decodeFile()
 }
 
 func decode(buffer []byte) {
@@ -45,8 +46,8 @@ func decode(buffer []byte) {
 
 }
 
-func decodeFile(filename string) {
-	file, err := os.Open(filename)
+func decodeFile() {
+	file, err := os.Open(*intputFileFlag)
 	if err != nil {
 		fmt.Println("error opening file: ", err)
 		return
