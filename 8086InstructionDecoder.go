@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 )
@@ -38,7 +37,7 @@ func main() {
 	if *comparisonFileFlag != "" {
 		compareFiles(decodedFile)
 	}
-	fmt.Print(decodedFile)
+	fmt.Printf("\n Decoded File: \n %s", decodedFile)
 }
 
 func compareFiles(decodedFile string) {
@@ -47,32 +46,26 @@ func compareFiles(decodedFile string) {
 		fmt.Printf("Failed to open comparison file: %v", err)
 	}
 
-	reader1 := bufio.NewReader(strings.NewReader(decodedFile))
-	reader2 := bufio.NewReader(comparisonFile)
+	reader1 := bufio.NewScanner(strings.NewReader(decodedFile))
+	reader2 := bufio.NewScanner(comparisonFile)
 
-	for {
-		line1, err1 := reader1.ReadString('\n')
-		line2, err2 := reader2.ReadString('\n')
+	for reader1.Scan() && reader2.Scan() {
 
-		if line1 != line2 {
-			fmt.Printf("lines do not match. DecodedFile Line: \n %v \n ComparisonFile Line: \n %v \n", line1, line2)
+		if reader1.Text() != reader2.Text() {
+			fmt.Printf("lines do not match. DecodedFile Line: \n %v \n ComparisonFile Line: \n %v \n", reader1.Text(), reader2.Text())
+		} else {
+			fmt.Printf("lines match. DecodedFile Line: \n %v \n ComparisonFile Line: \n %v \n", reader1.Text(), reader2.Text())
 		}
 
-		if err1 != nil {
-			if err1.Error() != "EOF" {
-				fmt.Printf("error while reading f1: %v", err1)
-			}
+		// After the loop, check for errors
+		if err := reader1.Err(); err != nil {
+			fmt.Printf("Error while reading decodedFile: %v\n", err)
 		}
 
-		if err2 != nil {
-			if err2.Error() != "EOF" {
-				fmt.Printf("error while reading file2: %v", err2)
-			}
+		if err := reader2.Err(); err != nil {
+			fmt.Printf("Error while reading comparisonFile: %v\n", err)
 		}
 
-		if err1 == io.EOF && err2 == io.EOF {
-			break
-		}
 	}
 
 }
@@ -80,10 +73,10 @@ func compareFiles(decodedFile string) {
 func decode(buffer []byte) string {
 	opcode := (buffer[0] & 0b11111100) >> 2
 	dFlag := (buffer[0] & 0b00000010) >> 1
-	wFlag := (buffer[0] & 0b00000001)
+	wFlag := buffer[0] & 0b00000001
 	// mod := (buffer[1] & 0b11000000) >> 6
 	reg := (buffer[1] & 0b00111000) >> 3
-	rm := (buffer[1] & 0b00000111)
+	rm := buffer[1] & 0b00000111
 
 	if dFlag == 1 {
 		return fmt.Sprint(opCodes[opcode], " ", registers[reg][wFlag]+", ", registers[rm][wFlag])
