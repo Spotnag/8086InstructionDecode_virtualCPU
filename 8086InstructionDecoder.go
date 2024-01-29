@@ -24,7 +24,7 @@ var registers = map[byte][]string{
 }
 
 var (
-	intputFileFlag     = flag.String("input", "", "binary file to read")
+	inputFileFlag      = flag.String("input", "", "binary file to read")
 	comparisonFileFlag = flag.String("compareFile", "", "ASM file to compare with")
 )
 
@@ -46,23 +46,30 @@ func compareFiles(decodedFile string) {
 		fmt.Printf("Failed to open comparison file: %v", err)
 	}
 
-	reader1 := bufio.NewScanner(strings.NewReader(decodedFile))
-	reader2 := bufio.NewScanner(comparisonFile)
+	decodedText := bufio.NewScanner(strings.NewReader(decodedFile))
+	comparisonText := bufio.NewScanner(comparisonFile)
 
-	for reader1.Scan() && reader2.Scan() {
+	for decodedText.Scan() {
 
-		if reader1.Text() != reader2.Text() {
-			fmt.Printf("lines do not match. DecodedFile Line: \n %v \n ComparisonFile Line: \n %v \n", reader1.Text(), reader2.Text())
+		//remove new lines from the comparison file
+		for comparisonText.Scan() {
+			if comparisonText.Text() != "" {
+				break
+			}
+		}
+
+		if decodedText.Text() != comparisonText.Text() {
+			fmt.Printf("lines do not match. DecodedFile Line: \n %v \n ComparisonFile Line: \n %v \n", decodedText.Text(), comparisonText.Text())
 		} else {
-			fmt.Printf("lines match. DecodedFile Line: \n %v \n ComparisonFile Line: \n %v \n", reader1.Text(), reader2.Text())
+			fmt.Printf("lines match. DecodedFile Line: \n %v \n ComparisonFile Line: \n %v \n", decodedText.Text(), comparisonText.Text())
 		}
 
 		// After the loop, check for errors
-		if err := reader1.Err(); err != nil {
+		if err := decodedText.Err(); err != nil {
 			fmt.Printf("Error while reading decodedFile: %v\n", err)
 		}
 
-		if err := reader2.Err(); err != nil {
+		if err := comparisonText.Err(); err != nil {
 			fmt.Printf("Error while reading comparisonFile: %v\n", err)
 		}
 
@@ -87,7 +94,7 @@ func decode(buffer []byte) string {
 }
 
 func decodeFile() (string, error) {
-	file, err := os.Open(*intputFileFlag)
+	file, err := os.Open(*inputFileFlag)
 	if err != nil {
 		return "", fmt.Errorf("error opening file: %v", err)
 	}
